@@ -1,14 +1,18 @@
 #pragma once
-
-#ifdef USE_ARDUINO
-
+#include "esphome/core/defines.h"
+#ifdef USE_NETWORK
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "esphome/core/component.h"
 
+#ifdef USE_ARDUINO
 #include <ESPAsyncWebServer.h>
+#elif USE_ESP_IDF
+#include "esphome/core/hal.h"
+#include "esphome/components/web_server_idf/web_server_idf.h"
+#endif
 
 namespace esphome {
 namespace web_server_base {
@@ -131,6 +135,7 @@ class OTARequestHandler : public AsyncWebHandler {
     return request->url() == "/update" && request->method() == HTTP_POST;
   }
 
+  // NOLINTNEXTLINE(readability-identifier-naming)
   bool isRequestHandlerTrivial() override { return false; }
 
  protected:
@@ -141,5 +146,4 @@ class OTARequestHandler : public AsyncWebHandler {
 
 }  // namespace web_server_base
 }  // namespace esphome
-
-#endif  // USE_ARDUINO
+#endif
