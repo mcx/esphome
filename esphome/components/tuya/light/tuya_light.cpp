@@ -120,8 +120,9 @@ light::LightTraits TuyaLight::get_traits() {
         traits.set_supported_color_modes(
             {light::ColorMode::RGB_COLOR_TEMPERATURE, light::ColorMode::COLOR_TEMPERATURE});
       }
-    } else
+    } else {
       traits.set_supported_color_modes({light::ColorMode::COLOR_TEMPERATURE});
+    }
     traits.set_min_mireds(this->cold_white_temperature_);
     traits.set_max_mireds(this->warm_white_temperature_);
   } else if (this->color_id_.has_value()) {
@@ -131,8 +132,9 @@ light::LightTraits TuyaLight::get_traits() {
       } else {
         traits.set_supported_color_modes({light::ColorMode::RGB_WHITE});
       }
-    } else
+    } else {
       traits.set_supported_color_modes({light::ColorMode::RGB});
+    }
   } else if (this->dimmer_id_.has_value()) {
     traits.set_supported_color_modes({light::ColorMode::BRIGHTNESS});
   } else {
@@ -168,7 +170,7 @@ void TuyaLight::write_state(light::LightState *state) {
 
   if (brightness > 0.0f || !color_interlock_) {
     if (this->color_temperature_id_.has_value()) {
-      uint32_t color_temp_int = static_cast<uint32_t>(color_temperature * this->color_temperature_max_value_);
+      uint32_t color_temp_int = static_cast<uint32_t>(roundf(color_temperature * this->color_temperature_max_value_));
       if (this->color_temperature_invert_) {
         color_temp_int = this->color_temperature_max_value_ - color_temp_int;
       }

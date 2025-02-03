@@ -54,6 +54,9 @@ bool BluetoothProxy::parse_devices(esp_ble_gap_cb_param_t::ble_scan_result_evt_p
     }
 
     resp.advertisements.push_back(std::move(adv));
+
+    ESP_LOGV(TAG, "Proxying raw packet from %02X:%02X:%02X:%02X:%02X:%02X, length %d. RSSI: %d dB", result.bda[0],
+             result.bda[1], result.bda[2], result.bda[3], result.bda[4], result.bda[5], length, result.rssi);
   }
   ESP_LOGV(TAG, "Proxying %d packets", count);
   this->api_connection_->send_bluetooth_le_raw_advertisements_response(resp);
@@ -87,6 +90,8 @@ void BluetoothProxy::send_api_packet_(const esp32_ble_tracker::ESPBTDevice &devi
 void BluetoothProxy::dump_config() {
   ESP_LOGCONFIG(TAG, "Bluetooth Proxy:");
   ESP_LOGCONFIG(TAG, "  Active: %s", YESNO(this->active_));
+  ESP_LOGCONFIG(TAG, "  Connections: %d", this->connections_.size());
+  ESP_LOGCONFIG(TAG, "  Raw advertisements: %s", YESNO(this->raw_advertisements_));
 }
 
 int BluetoothProxy::get_bluetooth_connections_free() {
@@ -196,6 +201,12 @@ void BluetoothProxy::loop() {
       this->api_connection_->send_bluetooth_gatt_get_services_response(resp);
     }
   }
+}
+
+esp32_ble_tracker::AdvertisementParserType BluetoothProxy::get_advertisement_parser_type() {
+  if (this->raw_advertisements_)
+    return esp32_ble_tracker::AdvertisementParserType::RAW_ADVERTISEMENTS;
+  return esp32_ble_tracker::AdvertisementParserType::PARSED_ADVERTISEMENTS;
 }
 
 BluetoothConnection *BluetoothProxy::get_connection_(uint64_t address, bool reserve) {
@@ -435,6 +446,7 @@ void BluetoothProxy::subscribe_api_connection(api::APIConnection *api_connection
   }
   this->api_connection_ = api_connection;
   this->raw_advertisements_ = flags & BluetoothProxySubscriptionFlag::SUBSCRIPTION_RAW_ADVERTISEMENTS;
+  this->parent_->recalculate_advertisement_parser_types();
 }
 
 void BluetoothProxy::unsubscribe_api_connection(api::APIConnection *api_connection) {
@@ -444,6 +456,7 @@ void BluetoothProxy::unsubscribe_api_connection(api::APIConnection *api_connecti
   }
   this->api_connection_ = nullptr;
   this->raw_advertisements_ = false;
+  this->parent_->recalculate_advertisement_parser_types();
 }
 
 void BluetoothProxy::send_device_connection(uint64_t address, bool connected, uint16_t mtu, esp_err_t error) {
@@ -462,6 +475,11 @@ void BluetoothProxy::send_connections_free() {
   api::BluetoothConnectionsFreeResponse call;
   call.free = this->get_bluetooth_connections_free();
   call.limit = this->get_bluetooth_connections_limit();
+  for (auto *connection : this->connections_) {
+    if (connection->address_ != 0) {
+      call.allocated.push_back(connection->address_);
+    }
+  }
   this->api_connection_->send_bluetooth_connections_free_response(call);
 }
 

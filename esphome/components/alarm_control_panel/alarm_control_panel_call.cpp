@@ -72,16 +72,20 @@ void AlarmControlPanelCall::validate_() {
       this->state_.reset();
       return;
     }
-    if (state == ACP_STATE_DISARMED &&
-        !(this->parent_->is_state_armed(this->parent_->get_state()) ||
-          this->parent_->get_state() == ACP_STATE_PENDING || this->parent_->get_state() == ACP_STATE_ARMING ||
-          this->parent_->get_state() == ACP_STATE_TRIGGERED)) {
+    if (state == ACP_STATE_DISARMED && !this->parent_->is_state_armed(this->parent_->get_state()) &&
+        this->parent_->get_state() != ACP_STATE_PENDING && this->parent_->get_state() != ACP_STATE_ARMING &&
+        this->parent_->get_state() != ACP_STATE_TRIGGERED) {
       ESP_LOGW(TAG, "Cannot disarm when not armed");
       this->state_.reset();
       return;
     }
     if (state == ACP_STATE_ARMED_HOME && (this->parent_->get_supported_features() & ACP_FEAT_ARM_HOME) == 0) {
       ESP_LOGW(TAG, "Cannot arm home when not supported");
+      this->state_.reset();
+      return;
+    }
+    if (state == ACP_STATE_ARMED_NIGHT && (this->parent_->get_supported_features() & ACP_FEAT_ARM_NIGHT) == 0) {
+      ESP_LOGW(TAG, "Cannot arm night when not supported");
       this->state_.reset();
       return;
     }

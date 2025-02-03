@@ -10,9 +10,7 @@
 #include <esp_timer.h>
 #include <soc/rtc.h>
 
-#if ESP_IDF_VERSION_MAJOR >= 4
 #include <hal/cpu_hal.h>
-#endif
 
 #ifdef USE_ARDUINO
 #include <esp32-hal.h>
@@ -55,16 +53,16 @@ void arch_init() {
 void IRAM_ATTR HOT arch_feed_wdt() { esp_task_wdt_reset(); }
 
 uint8_t progmem_read_byte(const uint8_t *addr) { return *addr; }
-uint32_t arch_get_cpu_cycle_count() {
-#if ESP_IDF_VERSION_MAJOR >= 4
-  return cpu_hal_get_cycle_count();
+#if ESP_IDF_VERSION_MAJOR >= 5
+uint32_t arch_get_cpu_cycle_count() { return esp_cpu_get_cycle_count(); }
 #else
-  uint32_t ccount;
-  __asm__ __volatile__("esync; rsr %0,ccount" : "=a"(ccount));
-  return ccount;
+uint32_t arch_get_cpu_cycle_count() { return cpu_hal_get_cycle_count(); }
 #endif
+uint32_t arch_get_cpu_freq_hz() {
+  rtc_cpu_freq_config_t config;
+  rtc_clk_cpu_freq_get_config(&config);
+  return config.freq_mhz * 1000000U;
 }
-uint32_t arch_get_cpu_freq_hz() { return rtc_clk_apb_freq_get(); }
 
 #ifdef USE_ESP_IDF
 TaskHandle_t loop_task_handle = nullptr;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)

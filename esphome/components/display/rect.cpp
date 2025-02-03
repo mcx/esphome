@@ -60,11 +60,11 @@ void Rect::shrink(Rect rect) {
   }
 }
 
-bool Rect::equal(Rect rect) {
+bool Rect::equal(Rect rect) const {
   return (rect.x == this->x) && (rect.w == this->w) && (rect.y == this->y) && (rect.h == this->h);
 }
 
-bool Rect::inside(int16_t test_x, int16_t test_y, bool absolute) {  // NOLINT
+bool Rect::inside(int16_t test_x, int16_t test_y, bool absolute) const {  // NOLINT
   if (!this->is_set()) {
     return true;
   }
@@ -75,7 +75,7 @@ bool Rect::inside(int16_t test_x, int16_t test_y, bool absolute) {  // NOLINT
   }
 }
 
-bool Rect::inside(Rect rect, bool absolute) {
+bool Rect::inside(Rect rect, bool absolute) const {
   if (!this->is_set() || !rect.is_set()) {
     return true;
   }
@@ -90,8 +90,9 @@ void Rect::info(const std::string &prefix) {
   if (this->is_set()) {
     ESP_LOGI(TAG, "%s [%3d,%3d,%3d,%3d] (%3d,%3d)", prefix.c_str(), this->x, this->y, this->w, this->h, this->x2(),
              this->y2());
-  } else
+  } else {
     ESP_LOGI(TAG, "%s ** IS NOT SET **", prefix.c_str());
+  }
 }
 
 }  // namespace display
